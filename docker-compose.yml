@@ -1,0 +1,24 @@
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    restart: always
+    volumes:
+      - posgresqlVolume:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=mmaqbour
+      - POSTGRES_PASSWORD=mmaqbour
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_DB=bookingEvent
+    ports:
+      - "5432:5432"
+    networks:
+      - bookingEventNetwork
+
+volumes:
+  posgresqlVolume:
+    driver: local
+
+networks:
+  bookingEventNetwork:
+    driver: bridge
