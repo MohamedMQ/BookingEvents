@@ -1,6 +1,10 @@
 package com.booking.booking.services;
 
+import java.util.NoSuchElementException;
+import java.util.Optional;
+
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -10,28 +14,45 @@ import com.booking.booking.dto.LoginUserDto;
 import com.booking.booking.models.User;
 import com.booking.booking.repositories.UserRepository;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
-@AllArgsConstructor
-// @NoArgsConstructor
 @Service
 public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
 
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
+    }
+
     public User signUp(RegisterUserDto userDto) {
-        User user = new User().setUsername(userDto.getUsername()).setEmail(userDto.getEmail()).setPassword(passwordEncoder.encode(userDto.getPassword()));
-        return UserRepository.save(user);
+        Optional<User> optional = userRepository.findByEmail(userDto.getEmail());
+        if (optional.isPresent())
+            throw new BadCredentialsException("User with this email already exists");
+        User user = new User();
+        user.setUsername(userDto.getUsername());
+        user.setEmail(userDto.getEmail());
+        user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+        return userRepository.save(user);
     }
 
     public User signIn(LoginUserDto loginUserDto) {
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginUserDto.getEmail(), loginUserDto.getPassword()));
-        return userRepository.findByEmail(loginUserDto.getEmail()).orElseThrow();
+        try {
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginUserDto.getEmail(), loginUserDto.getPassword()));
+            System.out.println("getting authenticatedUser");
+            return userRepository.findByEmail(loginUserDto.getEmail()).orElseThrow();
+        } catch (BadCredentialsException e) {
+            throw new BadCredentialsException("Invalid email or password");
+        } catch (NoSuchElementException e) {
+            throw new BadCredentialsException("No user with these credentials");
+        } catch (Exception e) {
+            throw new RuntimeException("Authentication failed: " + e.getMessage());
+        }
     }
 }

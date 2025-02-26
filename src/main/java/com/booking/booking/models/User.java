@@ -2,6 +2,7 @@ package com.booking.booking.models;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -13,15 +14,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
@@ -35,16 +31,12 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private int id;
 
-    @NotBlank(message = "Enter a valid username")
     @Column(nullable = false)
     private String username;
 
-    @Email(message = "Enter a valid email")
-    @NotBlank(message = "Email should not be blank or null")
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Size(min = 8, message = "Password should be more than 8 characters")
     @Column(nullable = false)
     private String password;
 
