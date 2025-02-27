@@ -1,4 +1,4 @@
-package com.booking.booking.dto;
+package com.booking.booking.dto.user;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

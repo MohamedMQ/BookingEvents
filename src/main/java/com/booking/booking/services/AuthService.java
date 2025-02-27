@@ -3,14 +3,18 @@ package com.booking.booking.services;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+import javax.management.RuntimeErrorException;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.booking.booking.dto.RegisterUserDto;
-import com.booking.booking.dto.LoginUserDto;
+import com.booking.booking.dto.user.LoginUserDto;
+import com.booking.booking.dto.user.RegisterUserDto;
 import com.booking.booking.models.User;
 import com.booking.booking.repositories.UserRepository;
 
@@ -36,7 +40,7 @@ public class AuthService {
         if (optional.isPresent())
             throw new BadCredentialsException("User with this email already exists");
         User user = new User();
-        user.setUsername(userDto.getUsername());
+        user.setName(userDto.getUsername());
         user.setEmail(userDto.getEmail());
         user.setPassword(passwordEncoder.encode(userDto.getPassword()));
         return userRepository.save(user);
@@ -54,5 +58,11 @@ public class AuthService {
         } catch (Exception e) {
             throw new RuntimeException("Authentication failed: " + e.getMessage());
         }
+    }
+
+    public User getUser() {
+        System.out.println("SEARCHING FOR THE USER");
+        UserDetails userDetails = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return userRepository.findByEmail(userDetails.getUsername()).orElseThrow(() -> new RuntimeException("User not found"));
     }
 }
