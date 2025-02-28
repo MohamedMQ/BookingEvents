@@ -14,7 +14,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class RegisterUserDto {
     @NotBlank(message = "Enter a valid username")
-    private String username;
+    private String name;
 
     @Email(message = "Enter a valid email")
     private String email;

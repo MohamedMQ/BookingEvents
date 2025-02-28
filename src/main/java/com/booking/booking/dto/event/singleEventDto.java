@@ -1,11 +1,8 @@
 package com.booking.booking.dto.event;
 
-import java.sql.Date;
-import java.sql.Time;
+import java.time.LocalDateTime;
 
 import com.booking.booking.models.Event;
-import com.booking.booking.utils.StatusEnum;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,27 +13,25 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class singleEventDto {
-    private int id;
+    private Long id;
 
     private String name;
 
     private String description;
 
+    private String location;
+
     private String category;
 
-    private Date date;
-
-    private Time time;
-
-    private String location;
+    private LocalDateTime eventDateTime;
 
     private double price;
 
-    private long maxTickets;
+    private long totalTickets;
 
     private String imageUrl;
 
-    private StatusEnum status;
+    private Boolean isCancelled;
 
     private String maker;
 
@@ -45,13 +40,12 @@ public class singleEventDto {
         this.name = event.getName();
         this.description = event.getDescription();
         this.category = event.getCategory();
-        this.date = event.getDate();
-        this.time = event.getTime();
+        this.eventDateTime = event.getEventDateTime();
         this.location = event.getLocation();
         this.price = event.getPrice();
-        this.maxTickets = event.getMaxTickets();
+        this.totalTickets = event.getTotalTickets();
         this.imageUrl = event.getImageUrl();
-        this.status = event.getStatus();
+        this.isCancelled = event.getIsCancelled();
         this.maker = event.getUser().getName();
     }
 }

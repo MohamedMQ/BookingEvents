@@ -1,12 +1,12 @@
 package com.booking.booking.dto.event;
 
-import java.sql.Date;
-import java.sql.Time;
+import java.time.LocalDateTime;
 
-import com.booking.booking.utils.StatusEnum;
+import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,31 +16,31 @@ import lombok.Setter;
 @AllArgsConstructor
 public class PostEventDto {
 
-    @NotBlank(message = "name should not be blank or null")
+    @NotBlank(message = "Name should not be blank or null")
     private String name;
     
-    @NotBlank(message = "description should not be blank or null")
+    @NotBlank(message = "Description should not be blank or null")
     private String description;
-    
-    @NotBlank(message = "category should not be blank or null")
-    private String category;
-    
-    @NotBlank(message = "date should not be blank or null")
-    private Date date;
-    
-    @NotBlank(message = "time should not be blank or null")
-    private Time time;
-    
-    @NotBlank(message = "location should not be blank or null")
+
+    @NotBlank(message = "Location should not be blank or null")
     private String location;
     
-    @NotBlank(message = "price should not be blank or null")
-    @Size(min = 5, message = "the price must be at least 5$")
+    @NotBlank(message = "Category should not be blank or null")
+    private String category;
+    
+    @NotNull(message = "Event date and time should not be null")
+    private LocalDateTime eventDateTime;
+
+    @NotNull(message = "Price should not be blank or null")
+    @Min(value = 5, message = "The price must be at least 5$")
     private double price;
     
-    @Size(min = 0, message = "the price must be at least 0")
-    private long maxTickets;
+    @NotNull(message = "Total tickets should not be blank or null")
+    @Min(value = 1, message = "The total tickets must be at least 1")
+    private long totalTickets;
     
-    @NotBlank(message = "status should be either ACTIVE/INACTIVE")
-    private StatusEnum status;
+    @NotNull(message = "Status should be either true or false")
+    private Boolean isCancelled;
+
+    private MultipartFile image;
 }

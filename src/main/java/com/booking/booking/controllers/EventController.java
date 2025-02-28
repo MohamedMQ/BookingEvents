@@ -5,6 +5,7 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -34,14 +35,14 @@ public class EventController {
         return ResponseEntity.status(HttpStatus.OK).body(mapEvent);
     }
 
-    @GetMapping("/:eventId")
+    @GetMapping("/{eventId}")
     ResponseEntity<Map<String, Object>> event(@PathVariable("eventId") Integer eventId) {
         Map<String, Object> event = eventService.getSingleEvent(eventId);
         return ResponseEntity.status(HttpStatus.OK).body(event);
     }
 
     @PostMapping
-    String event(@Valid @RequestBody PostEventDto postEventDto) {
+    String event(@Valid @ModelAttribute PostEventDto postEventDto) {
         eventService.postSingleEvent(postEventDto);
         return "Sorry";
     }

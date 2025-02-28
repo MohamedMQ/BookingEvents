@@ -1,24 +1,29 @@
 package com.booking.booking.services;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.booking.booking.dto.event.PostEventDto;
 import com.booking.booking.dto.event.singleEventDto;
 import com.booking.booking.models.Event;
 import com.booking.booking.models.User;
 import com.booking.booking.repositories.EventRepository;
-import com.booking.booking.utils.StatusEnum;
 
+import jakarta.annotation.Nonnull;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,6 +33,9 @@ import lombok.Setter;
 @AllArgsConstructor
 @Service
 public class EventService {
+    @Value("${application.file.uploads.photos-output-path}")
+    private String fileUploadPath;
+
     EventRepository eventRepository;
 
     public Map<String, Object> getAllEvents(int page, int size) {
@@ -51,7 +59,7 @@ public class EventService {
     }
     
     public Map<String, Object> getSingleEvent(Integer eventId) {
-        Event event = eventRepository.findById(eventId).orElseThrow(() -> new EntityNotFoundException("No event found with ID:: " + eventId));
+        Event event = eventRepository.findById(eventId).orElseThrow(() -> new EntityNotFoundException("No event found with ID " + eventId));
         Map<String, Object> mapEvent = new HashMap<>();
         mapEvent.put("status", "success");
         mapEvent.put("message", "Data retrieved successfully.");
@@ -60,7 +68,61 @@ public class EventService {
     }
 
     public void postSingleEvent(PostEventDto postEventDto) {
-        if (StatusEnum.valueOf(postEventDto.getStatus()) == null)
-            throw new EntityNotFoundException("status value is invalid" + postEventDto.getStatus());
+        if (!postEventDto.getIsCancelled())
+            throw new EntityNotFoundException("isCanceled value is invalid" + postEventDto.getIsCancelled());
+        if (!postEventDto.getEventDateTime().isAfter(LocalDateTime.now()))
+            throw new EntityNotFoundException("eventDateTime value is invalid" + postEventDto.getEventDateTime());
+        String imagePath = (postEventDto.getImage() != null && !postEventDto.getImage().isEmpty()) ? saveImage(postEventDto.getImage()) : getDefaultImagePath();
+        Event event = new Event(null, null, null, null, null, null, null, null, null, null, null, null, null);
+    }
+        
+    private String saveImage(MultipartFile image) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'saveImage'");
+    }
+
+    private String getDefaultImagePath() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getDefaultImagePath'");
+    }
+
+     public String saveFile(@Nonnull MultipartFile sourceFile, @Nonnull String userId) {
+        final String fileUploadSubPath = "users" + separator + userId;
+        return uploadFile(sourceFile, fileUploadSubPath);
+    }
+
+    private String uploadFile(@Nonnull MultipartFile sourceFile, @Nonnull String fileUploadSubPath) {
+        final String finalUploadPath = fileUploadPath + separator + fileUploadSubPath;
+        File targetFolder = new File(finalUploadPath);
+
+        if (!targetFolder.exists()) {
+            boolean folderCreated = targetFolder.mkdirs();
+            if (!folderCreated) {
+                log.warn("Failed to create the target folder: " + targetFolder);
+                return null;
+            }
+        }
+        final String fileExtension = getFileExtension(sourceFile.getOriginalFilename());
+        String targetFilePath = finalUploadPath + separator + currentTimeMillis() + "." + fileExtension;
+        Path targetPath = Paths.get(targetFilePath);
+        try {
+            Files.write(targetPath, sourceFile.getBytes());
+            log.info("File saved to: " + targetFilePath);
+            return targetFilePath;
+        } catch (IOException e) {
+            log.error("File was not saved", e);
+        }
+        return null;
+    }
+
+    private String getFileExtension(String fileName) {
+        if (fileName == null || fileName.isEmpty()) {
+            return "";
+        }
+        int lastDotIndex = fileName.lastIndexOf(".");
+        if (lastDotIndex == -1) {
+            return "";
+        }
+        return fileName.substring(lastDotIndex + 1).toLowerCase();
     }
 }

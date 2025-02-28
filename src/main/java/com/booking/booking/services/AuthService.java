@@ -3,8 +3,6 @@ package com.booking.booking.services;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
-import javax.management.RuntimeErrorException;
-
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -40,7 +38,7 @@ public class AuthService {
         if (optional.isPresent())
             throw new BadCredentialsException("User with this email already exists");
         User user = new User();
-        user.setName(userDto.getUsername());
+        user.setName(userDto.getName());
         user.setEmail(userDto.getEmail());
         user.setPassword(passwordEncoder.encode(userDto.getPassword()));
         return userRepository.save(user);

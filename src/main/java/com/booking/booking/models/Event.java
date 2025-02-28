@@ -1,15 +1,13 @@
 package com.booking.booking.models;
 
 import java.sql.Date;
-import java.sql.Time;
+import java.time.LocalDateTime;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import com.booking.booking.utils.StatusEnum;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -29,7 +27,7 @@ public class Event {
     @Id
     @GeneratedValue
     @Column(nullable = false)
-    private int id;
+    private Long id;
 
     @Column(nullable = false)
     private String name;
@@ -38,34 +36,30 @@ public class Event {
     private String description;
 
     @Column(nullable = false)
-    private String category;
-
-    @Column(nullable = false)
-    private Date date;
-
-    @Column(nullable = false)
-    private Time time;
-
-    @Column(nullable = false)
     private String location;
 
     @Column(nullable = false)
-    private double price;
+    private String category;
 
-    @Column(nullable = false, name = "max_tickets")
-    private long maxTickets;
+    @Column(nullable = false, name = "event_date_time")
+    private LocalDateTime eventDateTime;
 
-    @Column(nullable = false, name = "image_url")
-    private String imageUrl;
-
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private StatusEnum status;
+    private Double price;
+
+    @Column(nullable = false, name = "total_tickets")
+    private Integer totalTickets;
 
     // @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    @Column(nullable = false, name = "image_url")
+    private String imageUrl;
+
+    @Column(nullable = false, name = "is_cancelled")
+    private Boolean isCancelled;
 
     @CreationTimestamp
     @Column(updatable = false, name = "created_at")
