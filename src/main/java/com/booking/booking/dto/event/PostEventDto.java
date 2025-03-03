@@ -24,7 +24,7 @@ public class PostEventDto {
 
     @NotBlank(message = "Location should not be blank or null")
     private String location;
-    
+
     @NotBlank(message = "Category should not be blank or null")
     private String category;
     
@@ -37,10 +37,7 @@ public class PostEventDto {
     
     @NotNull(message = "Total tickets should not be blank or null")
     @Min(value = 1, message = "The total tickets must be at least 1")
-    private long totalTickets;
-    
-    @NotNull(message = "Status should be either true or false")
-    private Boolean isCancelled;
+    private Integer totalTickets;
 
     private MultipartFile image;
 }

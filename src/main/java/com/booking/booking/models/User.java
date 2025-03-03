@@ -46,18 +46,22 @@ public class User implements UserDetails {
     @JsonIgnore
     @Column(nullable = false)
     private String password;
+    
+    @CreationTimestamp
+    @Column(updatable = false, name = "created_at")
+    private Date createdAt;
+    
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private Date updatedAt;
 
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private Set<Event> events = new HashSet<>();
 
-    @CreationTimestamp
-    @Column(updatable = false, name = "created_at")
-    private Date createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private Date updatedAt;
+    @JsonIgnore
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private Set<Ticket> tickets = new HashSet<>();
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

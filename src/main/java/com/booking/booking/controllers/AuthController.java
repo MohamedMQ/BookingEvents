@@ -14,6 +14,7 @@ import com.booking.booking.services.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,17 +27,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
 
+@AllArgsConstructor
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
     private final JwtService jwtService;
     private final AuthService authenticationService;
-
-    public AuthController(JwtService jwtService, AuthService authenticationService) {
-        this.jwtService = jwtService;
-        this.authenticationService = authenticationService;
-    }
 
     @PostMapping("/register")
     public ResponseEntity<Map<String, Object>> register(@Valid @RequestBody RegisterUserDto registerUserDto) {
@@ -78,4 +75,6 @@ public class AuthController {
         response.put("data", user);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
+
+    // Update User Info Coming Soon
 }

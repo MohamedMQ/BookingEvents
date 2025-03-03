@@ -2,25 +2,34 @@ package com.booking.booking.models;
 
 import java.sql.Date;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
 @AllArgsConstructor
-// @NoArgsConstructor
+@NoArgsConstructor
+@Builder
 @Entity
 @Table(name = "events")
 public class Event {
@@ -50,16 +59,16 @@ public class Event {
     @Column(nullable = false, name = "total_tickets")
     private Integer totalTickets;
 
+    @Column(nullable = false, name = "available_tickets")
+    private Integer availableTickets;
+
+    // @Column(nullable = false, name = "image_url")
+    private String imageUrl;
+
     // @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
-
-    @Column(nullable = false, name = "image_url")
-    private String imageUrl;
-
-    @Column(nullable = false, name = "is_cancelled")
-    private Boolean isCancelled;
 
     @CreationTimestamp
     @Column(updatable = false, name = "created_at")
@@ -68,4 +77,8 @@ public class Event {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private Date updatedAt;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL)
+    private Set<Ticket> tickets = new HashSet<>();
 }

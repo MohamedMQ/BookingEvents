@@ -45,7 +45,6 @@ public class singleEventDto {
         this.price = event.getPrice();
         this.totalTickets = event.getTotalTickets();
         this.imageUrl = event.getImageUrl();
-        this.isCancelled = event.getIsCancelled();
         this.maker = event.getUser().getName();
     }
 }
