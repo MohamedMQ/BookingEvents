@@ -20,6 +20,14 @@ security:
         expiration-time: 3600000
 
 application:
-  file:
-    uploads:
-      photos-output-path: ./uploads
+    file:
+        uploads:
+            photos-output-path: ./uploads
+    stripe:
+        api_key: k_test_51QyX2k2f0IUkWUsZ8aK7XcW8gs5KkGck4zsuW3JIhmJSepukiurKONjcSRkKA53JJ6WpBoHMwEZhgVatLa7czILO00gKc6SeKf
+
+springdoc:
+    api-docs:
+        enabled: true
+    swagger-ui:
+        enabled: true

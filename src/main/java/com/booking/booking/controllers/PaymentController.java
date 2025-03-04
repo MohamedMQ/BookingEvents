@@ -7,18 +7,30 @@ import com.booking.booking.dto.payment.PostPaymentDto;
 import com.booking.booking.services.PaymentService;
 
 import lombok.AllArgsConstructor;
+
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 
-@AllArgsConstructor
+// @AllArgsConstructor
 @RestController
 @RequestMapping("/api/payments")
 public class PaymentController {
     private final PaymentService paymentService;
 
+    @Autowired
+    PaymentController(PaymentService paymentService) {
+        this.paymentService = paymentService;
+    }
+
     @PostMapping
-    public String postMethodName(@RequestBody PostPaymentDto postPaymentDto) {
-        return entity;
+    public ResponseEntity<Map<String, Object>> chargeCard(@RequestBody PostPaymentDto postPaymentDto) {
+        Map<String, Object> mapPayment = paymentService.chargeCreditCard(postPaymentDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(mapPayment);
     }
 }

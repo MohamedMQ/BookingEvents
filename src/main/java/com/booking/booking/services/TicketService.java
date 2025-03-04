@@ -49,20 +49,27 @@ public class TicketService {
     public Map<String, Object> postTicket(PostTicketDto postTicketDto) {
         User user = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Event event = eventRepository.findById(postTicketDto.getEventId()).orElseThrow(() -> new EntityNotFoundException("No event found with the given ID " + postTicketDto.getEventId()));
+        if (user.getId() == event.getUser().getId())
+            throw new EntityNotFoundException("You cannot book a ticket for your own event");
         if (event.getEventDateTime().isEqual(LocalDateTime.now()) || event.getEventDateTime().isBefore(LocalDateTime.now()))
             throw new EntityNotFoundException("The event already started or finished");
         long countTicketsConfirmed = ticketRepository.countByStatus(TicketStatus.CONFIRMED);
         if (countTicketsConfirmed == event.getTotalTickets())
             throw new EntityNotFoundException("all the tickets has been sold");
+        if (event.getAvailableTickets() == 0)
+            throw new EntityNotFoundException("all tickets are booked, Try again later");
         Optional<Ticket> ticket = ticketRepository.findByUserIdAndEventIdAndStatusNot(user.getId(), event.getId(), TicketStatus.CANCELED);
         if (ticket.isPresent())
             throw new EntityNotFoundException("You already purchased or booked a ticket for this event");
         Ticket newTicket = Ticket
-                                .builder()
-                                .user(user)
-                                .event(event)
-                                .status(TicketStatus.PENDING)
-                                .build();
+            .builder()
+            .user(user)
+            .event(event)
+            .status(TicketStatus.PENDING)
+            .build();
+        newTicket = ticketRepository.save(newTicket);
+        event.setAvailableTickets(event.getAvailableTickets() - 1);
+        eventRepository.save(event);
         Map<String, Object> mapTicket = new HashMap<>();
         mapTicket.put("status", "success");
         mapTicket.put("message", "Ticket added successfully.");
