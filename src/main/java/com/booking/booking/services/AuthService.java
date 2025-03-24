@@ -33,7 +33,7 @@ public class AuthService {
         this.authenticationManager = authenticationManager;
     }
 
-    public User signUp(RegisterUserDto userDto) {
+    public User postPublicSignUp(RegisterUserDto userDto) {
         Optional<User> optional = userRepository.findByEmail(userDto.getEmail());
         if (optional.isPresent())
             throw new BadCredentialsException("User with this email already exists");
@@ -44,10 +44,9 @@ public class AuthService {
         return userRepository.save(user);
     }
 
-    public User signIn(LoginUserDto loginUserDto) {
+    public User postPublicLogin(LoginUserDto loginUserDto) {
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginUserDto.getEmail(), loginUserDto.getPassword()));
-            System.out.println("getting authenticatedUser");
             return userRepository.findByEmail(loginUserDto.getEmail()).orElseThrow();
         } catch (BadCredentialsException e) {
             throw new BadCredentialsException("Invalid email or password");
@@ -58,8 +57,7 @@ public class AuthService {
         }
     }
 
-    public User getUser() {
-        System.out.println("SEARCHING FOR THE USER");
+    public User getProtectedProfile() {
         UserDetails userDetails = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return userRepository.findByEmail(userDetails.getUsername()).orElseThrow(() -> new RuntimeException("User not found"));
     }

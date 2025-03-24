@@ -5,9 +5,12 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 
 import com.booking.booking.utils.PaymentStatus;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -31,17 +34,19 @@ public class Payment {
     @GeneratedValue
     private Long id;
 
+    @JsonIgnore
     @OneToOne
     @JoinColumn(nullable = false, name = "ticket_id")
     private Ticket ticket;
 
-    @Column(nullable = false)
-    private Double amount;
+    // @Column(nullable = false)
+    // private Double amount;
 
-    @Column(nullable = false, name = "transaction_id")
-    private String transactionId;
+    @Column(nullable = false, name = "session_id")
+    private String sessionId;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private PaymentStatus status;
 
     @CreationTimestamp

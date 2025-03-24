@@ -42,6 +42,7 @@ public class Ticket {
     @JoinColumn(nullable = false, name = "user_id")
     private User user;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(nullable = false, name = "event_id")
     private Event event;

@@ -15,10 +15,13 @@ import org.springframework.stereotype.Service;
 
 import com.booking.booking.dto.ticket.PostTicketDto;
 import com.booking.booking.models.Event;
+import com.booking.booking.models.Payment;
 import com.booking.booking.models.Ticket;
 import com.booking.booking.models.User;
 import com.booking.booking.repositories.EventRepository;
+import com.booking.booking.repositories.PaymentRepository;
 import com.booking.booking.repositories.TicketRepository;
+import com.booking.booking.utils.PaymentStatus;
 import com.booking.booking.utils.TicketStatus;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -33,6 +36,7 @@ import lombok.Setter;
 public class TicketService {
     private final TicketRepository ticketRepository;
     private final EventRepository eventRepository;
+    private final PaymentRepository paymentRepository;
 
     public Map<String, Object> getTicket(Long tickedId) {
         User user = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -61,6 +65,8 @@ public class TicketService {
         Optional<Ticket> ticket = ticketRepository.findByUserIdAndEventIdAndStatusNot(user.getId(), event.getId(), TicketStatus.CANCELED);
         if (ticket.isPresent())
             throw new EntityNotFoundException("You already purchased or booked a ticket for this event");
+        event.setAvailableTickets(event.getAvailableTickets() - 1);
+        eventRepository.save(event);
         Ticket newTicket = Ticket
             .builder()
             .user(user)
@@ -68,8 +74,13 @@ public class TicketService {
             .status(TicketStatus.PENDING)
             .build();
         newTicket = ticketRepository.save(newTicket);
-        event.setAvailableTickets(event.getAvailableTickets() - 1);
-        eventRepository.save(event);
+        Payment newPayment = Payment
+            .builder()
+            .ticket(newTicket)
+            .sessionId("")
+            .status(PaymentStatus.PENDING)
+            .build();
+        paymentRepository.save(newPayment);
         Map<String, Object> mapTicket = new HashMap<>();
         mapTicket.put("status", "success");
         mapTicket.put("message", "Ticket added successfully.");

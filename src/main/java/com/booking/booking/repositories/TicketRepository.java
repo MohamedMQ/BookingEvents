@@ -1,5 +1,6 @@
 package com.booking.booking.repositories;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -15,4 +16,5 @@ public interface TicketRepository extends JpaRepository<Ticket, Integer> {
     long countByStatus(TicketStatus confirmed);
     Optional<Ticket> findByUserIdAndEventIdAndStatusNot(int userId, Long eventId, TicketStatus ticketStatus);
     Page<Event> findAllByUserId(Pageable pageable,int userId);
+    List<Ticket> findByStatus(TicketStatus ticketStatus);
 }

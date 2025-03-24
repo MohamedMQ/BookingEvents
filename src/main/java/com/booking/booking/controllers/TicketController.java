@@ -6,8 +6,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.booking.booking.dto.ticket.PostTicketDto;
 import com.booking.booking.services.TicketService;
 
-import lombok.AllArgsConstructor;
-
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 // @AllArgsConstructor
 @RestController
-@RequestMapping("/api/tickets")
+@RequestMapping("/api")
 public class TicketController {
     private final TicketService ticketService;
 
@@ -31,7 +29,7 @@ public class TicketController {
         this.ticketService = ticketService;
     }
 
-    @PostMapping
+    @PostMapping("/protected/tickets")
     public ResponseEntity<Map<String, Object>> postNewTicket(@RequestBody PostTicketDto postTicketDto) {
         Map<String, Object> mapTicket = ticketService.postTicket(postTicketDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(mapTicket);

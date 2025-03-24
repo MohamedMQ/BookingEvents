@@ -73,8 +73,7 @@ public class PaymentService {
             ticketRepository.save(ticket);
             Payment payment = Payment.builder()
                 .ticket(ticket)
-                .amount(ticket.getEvent().getPrice())
-                .transactionId(intent.getId())
+                .sessionId(intent.getId())
                 .status(PaymentStatus.SUCCESS)
                 .build();
             payment = paymentRepository.save(payment);
@@ -90,8 +89,7 @@ public class PaymentService {
             eventRepository.save(event);
             Payment payment = Payment.builder()
                 .ticket(ticket)
-                .amount(ticket.getEvent().getPrice())
-                .transactionId(postPaymentDto.getStripeToken())
+                .sessionId(postPaymentDto.getStripeToken())
                 .status(PaymentStatus.FAILED)
                 .build();
             paymentRepository.save(payment);

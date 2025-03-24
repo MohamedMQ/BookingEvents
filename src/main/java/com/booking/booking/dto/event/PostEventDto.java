@@ -4,9 +4,15 @@ import java.time.LocalDateTime;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.booking.booking.utils.MusicCategory;
+
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,27 +22,33 @@ import lombok.Setter;
 @AllArgsConstructor
 public class PostEventDto {
 
-    @NotBlank(message = "Name should not be blank or null")
+    @NotBlank(message = "Enter Event Name")
+    @Pattern(regexp = "^[a-zA-Z0-9][a-zA-Z0-9 -]{3,48}[a-zA-Z0-9]$", message = "Invalid Event Name")
     private String name;
     
-    @NotBlank(message = "Description should not be blank or null")
+    @NotBlank(message = "Enter Description")
+    @Pattern(regexp = "^[\\w\\d\\s.,!?&'\\\"()-]{20,500}$", message = "Invalid Description")
     private String description;
 
-    @NotBlank(message = "Location should not be blank or null")
+    @NotBlank(message = "Enter Location")
+    @Pattern(regexp = "^[a-zA-Z0-9\\s.,'-]{5,100}$", message = "Invalid Location")
     private String location;
 
-    @NotBlank(message = "Category should not be blank or null")
-    private String category;
+    @NotNull(message = "Enter Category")
+    private MusicCategory category;
     
-    @NotNull(message = "Event date and time should not be null")
+    @NotNull(message = "Enter event date")
     private LocalDateTime eventDateTime;
 
-    @NotNull(message = "Price should not be blank or null")
-    @Min(value = 5, message = "The price must be at least 5$")
-    private double price;
+    @NotNull(message = "Enter Price Per Ticket")
+    @DecimalMin(value = "5", inclusive = true, message = "Invalid Price Per Ticket")
+    @DecimalMax(value = "9999.99", inclusive = true, message = "Invalid Price Per Ticket")
+    // @MaxDecimalPlaces(max = 2, message = "Invalid Price Per Ticket")  -- CUSTOM VALIDATION --
+    private Double price;
     
-    @NotNull(message = "Total tickets should not be blank or null")
-    @Min(value = 1, message = "The total tickets must be at least 1")
+    @NotNull(message = "Enter Price Per Ticket")
+    @Min(value = 5, message = "invalid Total Tickets Available")
+    @Max(value = 9999, message = "invalid Total Tickets Available")
     private Integer totalTickets;
 
     private MultipartFile image;

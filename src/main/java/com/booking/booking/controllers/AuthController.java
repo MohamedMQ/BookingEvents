@@ -29,32 +29,34 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 @AllArgsConstructor
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api")
 public class AuthController {
 
     private final JwtService jwtService;
     private final AuthService authenticationService;
 
-    @PostMapping("/register")
-    public ResponseEntity<Map<String, Object>> register(@Valid @RequestBody RegisterUserDto registerUserDto) {
+    /* NOT PROTECTED ROUTES */
+
+    @PostMapping("/public/auth/register")
+    public ResponseEntity<Map<String, Object>> publicRegister(@Valid @RequestBody RegisterUserDto registerUserDto) {
         Map<String, Object> response = new HashMap<>();
-        User registeredUser = authenticationService.signUp(registerUserDto);
+        User registeredUser = authenticationService.postPublicSignUp(registerUserDto);
         response.put("status", "success");
         response.put("message", "Registered successfully.");
         response.put("data", new RegisterUserResponseDto(registeredUser));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> authenticate(@Valid @RequestBody LoginUserDto loginUserDto, 
+    @PostMapping("/public/auth/login")
+    public ResponseEntity<Map<String, Object>> publicLogin(@Valid @RequestBody LoginUserDto loginUserDto, 
                                                 HttpServletRequest request ,
                                                 HttpServletResponse responseHeader) {
-        User authenticatedUser = authenticationService.signIn(loginUserDto);
+        User authenticatedUser = authenticationService.postPublicLogin(loginUserDto);
         String jwtToken = jwtService.generateToken(authenticatedUser);
         ResponseCookie cookie = ResponseCookie
                                 .from("accessToken", jwtToken)
                                 .httpOnly(true)
-                                .secure(false)
+                                .secure(true)
                                 .path("/")
                                 .maxAge(jwtService.getExpirationTime())
                                 .build();
@@ -65,10 +67,12 @@ public class AuthController {
         response.put("data", new LoginUserResponseDto(authenticatedUser));
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
-    
-    @GetMapping("/me")
-    public ResponseEntity<Map<String, Object>> profile() {
-        User user = authenticationService.getUser();
+
+    /* PROTECTED ROUTES */
+
+    @GetMapping("/protected/auth/profile")
+    public ResponseEntity<Map<String, Object>> protectedProfile() {
+        User user = authenticationService.getProtectedProfile();
         Map<String, Object> response = new HashMap<>();
         response.put("status", "success");
         response.put("message", "User details");

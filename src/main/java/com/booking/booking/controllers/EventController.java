@@ -20,38 +20,58 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
 @RestController
-@RequestMapping("/api/events")
+@RequestMapping("/api")
 public class EventController {
     private final EventService eventService;
 
-    @GetMapping
-    ResponseEntity<Map<String, Object>> events(
+    /* NOT PROTECTED ROUTES */
+
+    @GetMapping("/public/events")
+    ResponseEntity<Map<String, Object>> publicEvents(
         @RequestParam(name = "page", defaultValue = "0", required = false) int page,
         @RequestParam(name = "size", defaultValue = "10", required = false) int size) {
-        Map<String, Object> mapEvent = eventService.getAllEvents(page, size);
+        System.out.println("INSIDE EVENTS PUBLIC");
+        Map<String, Object> mapEvent = eventService.getPublicEvents(page, size);
         return ResponseEntity.status(HttpStatus.OK).body(mapEvent);
     }
 
-    @GetMapping("/{eventId}")
-    ResponseEntity<Map<String, Object>> event(@PathVariable("eventId") Integer eventId) {
-        Map<String, Object> event = eventService.getSingleEvent(eventId);
+    @GetMapping("/public/events/{eventId}")
+    ResponseEntity<Map<String, Object>> publicEvent(@PathVariable("eventId") Long eventId) {
+        Map<String, Object> event = eventService.getPublicEvent(eventId);
         return ResponseEntity.status(HttpStatus.OK).body(event);
     }
 
-    @PostMapping
-    ResponseEntity<Map<String, Object>> event(@Valid @ModelAttribute PostEventDto postEventDto) {
-        Map<String, Object> event = eventService.postSingleEvent(postEventDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(event);
-    }
-
-    // Update And Delete Coming Soon
-
-    @GetMapping("/search")
-    ResponseEntity<Map<String, Object>> searchEvents(
+    @GetMapping("/public/events/search")
+    ResponseEntity<Map<String, Object>> publicEventSearch(
         @RequestParam(name = "page", defaultValue = "0", required = false) int page,
         @RequestParam(name = "size", defaultValue = "10", required = false) int size,
         @RequestParam(name = "searchTerm", required = true) String searchTerm) {
-        Map<String, Object> mapEvent = eventService.searchEvents(page, size, searchTerm);
+        Map<String, Object> mapEvent = eventService.getPublicEventSearch(page, size, searchTerm);
         return ResponseEntity.status(HttpStatus.OK).body(mapEvent);
     }
+
+    /* PROTECTED ROUTES */
+    
+    @GetMapping("/protected/events")
+    ResponseEntity<Map<String, Object>> protectedEvents(
+        @RequestParam(name = "page", defaultValue = "0", required = false) int page,
+        @RequestParam(name = "size", defaultValue = "10", required = false) int size) {
+        Map<String, Object> mapEvent = eventService.getProtectedEvents(page, size);
+        return ResponseEntity.status(HttpStatus.OK).body(mapEvent);
+    }
+
+    @GetMapping("/protected/events/{eventId}")
+    ResponseEntity<Map<String, Object>> protectedEvent(@PathVariable("eventId") Long eventId) {
+        Map<String, Object> event = eventService.getProtectedEvent(eventId);
+        return ResponseEntity.status(HttpStatus.OK).body(event);
+    }
+    
+    @PostMapping("/protected/events")
+    ResponseEntity<Map<String, Object>> protectedEvent(@Valid @ModelAttribute PostEventDto postEventDto) {
+        Map<String, Object> event = eventService.postProtectedSingleEvent(postEventDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(event);
+    }
+
+    // Update and Delete event Coming Soon
 }
+    

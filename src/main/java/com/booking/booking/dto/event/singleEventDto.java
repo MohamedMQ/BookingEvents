@@ -3,6 +3,8 @@ package com.booking.booking.dto.event;
 import java.time.LocalDateTime;
 
 import com.booking.booking.models.Event;
+import com.booking.booking.utils.MusicCategory;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,7 +23,7 @@ public class singleEventDto {
 
     private String location;
 
-    private String category;
+    private MusicCategory category;
 
     private LocalDateTime eventDateTime;
 
