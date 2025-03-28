@@ -46,11 +46,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
         String uri = request.getRequestURI();        
         
+        System.err.println("URI ===============> " + uri);
+
         if (
             uri.startsWith("/api/public")
             || uri.startsWith("/uploads/users/events/")
+            || uri.matches("^\\/ws\\/.*")
         ) {
-            System.err.println("URI ===============> " + uri);
             filterChain.doFilter(request, response);
             return;
         }

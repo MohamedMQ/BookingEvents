@@ -67,10 +67,14 @@ public class Event {
     @Column(nullable = false, name = "available_tickets")
     private Integer availableTickets;
 
-    // @Column(nullable = false, name = "image_url")
+    @Column(name = "ticket_number")
+    private Integer TicketNumber;
+
+    // @Column(nullable = false)
+    // private EventStatus status;
+
     private String imageUrl;
 
-    // @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;

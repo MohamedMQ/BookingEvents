@@ -3,8 +3,8 @@ services:
     image: postgres:latest
     container_name: postgres
     restart: always
-    volumes:
-      - posgresqlVolume:/var/lib/postgresql/data
+    # volumes:
+      # - posgresqlVolume:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=mmaqbour
       - POSTGRES_PASSWORD=mmaqbour

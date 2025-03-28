@@ -43,11 +43,10 @@ public class PostEventDto {
     @NotNull(message = "Enter Price Per Ticket")
     @DecimalMin(value = "5", inclusive = true, message = "Invalid Price Per Ticket")
     @DecimalMax(value = "9999.99", inclusive = true, message = "Invalid Price Per Ticket")
-    // @MaxDecimalPlaces(max = 2, message = "Invalid Price Per Ticket")  -- CUSTOM VALIDATION --
     private Double price;
     
     @NotNull(message = "Enter Price Per Ticket")
-    @Min(value = 5, message = "invalid Total Tickets Available")
+    @Min(value = 1, message = "invalid Total Tickets Available") // VALUE SHOULD BE 5
     @Max(value = 9999, message = "invalid Total Tickets Available")
     private Integer totalTickets;
 

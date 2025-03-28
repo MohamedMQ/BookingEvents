@@ -19,11 +19,12 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     Optional<Event> findById(Long eventId);
     Optional<Event> findByIdAndUserId(Long eventId, Integer userId);
     @Query("""
-        SELECT DISTINCT e FROM Event e 
-        LEFT JOIN e.tickets t 
-        ON t.event.id = e.id 
-        AND t.user.id = :userId 
+        SELECT DISTINCT e FROM Event e
+        LEFT JOIN e.tickets t
+        ON t.event.id = e.id
+        AND t.user.id = :userId
         AND (t.status = 'PENDING' OR t.status = 'CONFIRMED')
     """)
     Page<Event> findAllEventsWithUserTickets(Pageable pageable, int userId);
+    Page<Event> findByUserId(Pageable pageable, int id);
 }

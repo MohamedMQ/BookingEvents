@@ -60,6 +60,15 @@ public class EventController {
         return ResponseEntity.status(HttpStatus.OK).body(mapEvent);
     }
 
+    @GetMapping("/protected/events/me")
+    public ResponseEntity<Map<String, Object>> protectedEventsOwn(
+        @RequestParam(name = "page", defaultValue = "0", required = false) int page,
+        @RequestParam(name = "size", defaultValue = "10", required = false) int size) {
+        Map<String, Object> mapEvent = eventService.getProtectedEventsOwn(page, size);
+        return ResponseEntity.status(HttpStatus.OK).body(mapEvent);
+    }
+    
+
     @GetMapping("/protected/events/{eventId}")
     ResponseEntity<Map<String, Object>> protectedEvent(@PathVariable("eventId") Long eventId) {
         Map<String, Object> event = eventService.getProtectedEvent(eventId);

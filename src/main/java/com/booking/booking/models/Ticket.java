@@ -50,6 +50,9 @@ public class Ticket {
     @Enumerated(EnumType.STRING)
     private TicketStatus status;
 
+    @Column(nullable = false, name = "queue_num")
+    private Integer queueNum;
+
     @CreationTimestamp
     @Column(updatable = false, name = "created_at")
     private LocalDateTime createdAt;

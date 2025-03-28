@@ -39,10 +39,10 @@ public class Payment {
     @JoinColumn(nullable = false, name = "ticket_id")
     private Ticket ticket;
 
-    // @Column(nullable = false)
-    // private Double amount;
+    @Column(nullable = false)
+    private Double amount;
 
-    @Column(nullable = false, name = "session_id")
+    @Column(name = "session_id")
     private String sessionId;
 
     @Column(nullable = false)

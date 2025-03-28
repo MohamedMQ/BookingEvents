@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -18,9 +20,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.booking.booking.dto.event.PostEventDto;
 import com.booking.booking.models.Event;
+import com.booking.booking.models.Ticket;
 import com.booking.booking.models.User;
 import com.booking.booking.repositories.EventRepository;
 import com.booking.booking.repositories.TicketRepository;
+import com.booking.booking.utils.TicketStatus;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.Getter;
@@ -44,19 +48,30 @@ public class EventService {
     private final EventRepository eventRepository;
     private final TicketRepository ticketRepository;
 
-    public EventService(EventRepository eventRepository, TicketRepository ticketRepository) {
+    public EventService(
+        EventRepository eventRepository,
+        TicketRepository ticketRepository) {
         this.eventRepository = eventRepository;
         this.ticketRepository = ticketRepository;
     }
 
     // NOT PROTECTED SERVICES
 
-    public Map<String, Object> getPublicEvents(int page, int size) {
+    public Map<String, Object> getPublicEvents(
+        int page,
+        int size) {
         Map<String, Object> mapEvent = new HashMap<>();
         Map<String, Object> mapPagination = new HashMap<>();
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Event> events = eventRepository.findAll(pageable);
-        List<Event> eventList = events.stream().toList();
+        // List<Event> eventList = events.stream().toList();
+
+        List<Event> eventList = events.stream().map(event -> {
+            Set<Ticket> emptyTickets = Set.of();
+            event.setTickets(emptyTickets);
+            return event;
+        }).toList();
+
         mapPagination.put("currentPage", events.getNumber());
         mapPagination.put("pageSize", events.getSize());
         mapPagination.put("totalElements", events.getTotalElements());
@@ -75,13 +90,20 @@ public class EventService {
         Event event = eventRepository
                 .findById(eventId)
                 .orElseThrow(() -> new EntityNotFoundException("No event found with ID " + eventId));
-            mapEvent.put("status", "success");
-            mapEvent.put("message", "Data retrieved successfully.");
-            mapEvent.put("data", event);
+        
+        Set<Ticket> emptyTickets = Set.of();
+        event.setTickets(emptyTickets);
+        
+        mapEvent.put("status", "success");
+        mapEvent.put("message", "Data retrieved successfully.");
+        mapEvent.put("data", event);
         return mapEvent;
     }
 
-    public Map<String, Object> getPublicEventSearch(int page, int size, String searchTerm) {
+    public Map<String, Object> getPublicEventSearch(
+        int page,
+        int size,
+        String searchTerm) {
         Map<String, Object> mapEvent = new HashMap<>();
         Map<String, Object> mapPagination = new HashMap<>();
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
@@ -102,13 +124,59 @@ public class EventService {
 
     // PROTECTED SERVICES
 
-    public Map<String, Object> getProtectedEvents(int page, int size) {
+    public Map<String, Object> getProtectedEvents(
+        int page,
+        int size) {
         Map<String, Object> mapEvent = new HashMap<>();
         Map<String, Object> mapPagination = new HashMap<>();
         User user = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Event> events = eventRepository.findAllEventsWithUserTickets(pageable, user.getId());
-        List<Event> eventList = events.stream().toList();
+        // Page<Event> events = eventRepository.findAllEventsWithUserTickets(pageable, user.getId());
+        // List<Event> eventList = events.stream().toList();
+        
+        Page<Event> events = eventRepository.findAll(pageable);
+        List<Event> eventList = events.stream().map(event -> {
+            Set<Ticket> filteredTickets = event.getTickets().stream()
+                .filter(ticket -> {
+                    System.err.println(ticket.getStatus());
+                    return ((ticket.getStatus() == TicketStatus.PENDING
+                        || ticket.getStatus() == TicketStatus.QUEUED)
+                        && ticket.getUser().getId() == user.getId());
+                })
+                .collect(Collectors.toSet());
+            event.setTickets(filteredTickets);
+            return event;
+        }).toList();
+
+        mapPagination.put("currentPage", events.getNumber());
+        mapPagination.put("pageSize", events.getSize());
+        mapPagination.put("totalElements", events.getTotalElements());
+        mapPagination.put("totalPages", events.getTotalPages());
+        mapPagination.put("firstPage", events.isFirst());
+        mapPagination.put("lastPage", events.isLast());
+        mapEvent.put("status", "success");
+        mapEvent.put("message", "Data retrieved successfully.");
+        mapEvent.put("data", eventList);
+        mapEvent.put("pagination", mapPagination);
+        return mapEvent;
+    }
+
+    public Map<String, Object> getProtectedEventsOwn(int page, int size) {
+        Map<String, Object> mapEvent = new HashMap<>();
+        Map<String, Object> mapPagination = new HashMap<>();
+        User user = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());        
+        Page<Event> events = eventRepository.findByUserId(pageable, user.getId());
+        // List<Event> eventList = events.stream().toList();
+
+        List<Event> eventList = events.stream().map(event -> {
+            Set<Ticket> filteredTickets = event.getTickets().stream()
+                .filter(ticket -> ticket.getStatus() == TicketStatus.CONFIRMED)
+                .collect(Collectors.toSet());
+            event.setTickets(filteredTickets);
+            return event;
+        }).toList();
+
         mapPagination.put("currentPage", events.getNumber());
         mapPagination.put("pageSize", events.getSize());
         mapPagination.put("totalElements", events.getTotalElements());
@@ -126,13 +194,21 @@ public class EventService {
         Map<String, Object> mapEvent = new HashMap<>();
         User user = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Event event = eventRepository
-            .findByIdAndUserId(eventId, user.getId())
-            .orElseThrow(() -> new EntityNotFoundException("No event found with eventId " + eventId));
+            .findById(eventId)
+            .orElseThrow(() -> new EntityNotFoundException("No event found with eventId " + eventId));    
+
+        Set<Ticket> filteredTickets = event.getTickets().stream()
+            .filter((ticket -> (ticket.getStatus() == TicketStatus.PENDING
+                || ticket.getStatus() == TicketStatus.QUEUED)
+                && ticket.getUser().getId() == user.getId()))
+            .collect(Collectors.toSet());    
+        event.setTickets(filteredTickets);
+        
         mapEvent.put("status", "success");
         mapEvent.put("message", "Data retrieved successfully.");
         mapEvent.put("data", event);
         return mapEvent;
-    }
+    }    
 
     public Map<String, Object> postProtectedSingleEvent(PostEventDto postEventDto) {
         User user = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -151,6 +227,7 @@ public class EventService {
                         .price(postEventDto.getPrice())
                         .totalTickets(postEventDto.getTotalTickets())
                         .availableTickets(postEventDto.getTotalTickets())
+                        .TicketNumber(postEventDto.getTotalTickets())
                         .user(user)
                         .imageUrl(imagePath)
                         .build();
