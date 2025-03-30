@@ -37,6 +37,7 @@ public class TicketQueueService {
                 .event(event)
                 .status(TicketStatus.QUEUED)
                 .queueNum(1)
+                .qrCodeUrl("")
                 .build();
             ticketRepository.save(newTicket);
             newEventQueue.add(newTicket.getId());
@@ -50,6 +51,7 @@ public class TicketQueueService {
                 .event(event)
                 .status(TicketStatus.QUEUED)
                 .queueNum(-1)
+                .qrCodeUrl("")
                 .build();
             ticketRepository.save(newTicket);
             eventQueue.add(newTicket.getId());

@@ -16,6 +16,30 @@ import java.nio.file.Paths;
 @RestController
 @RequestMapping("/uploads")
 public class FileController {
+    @GetMapping("/tickets/{userId}/{eventId}/{filename}")
+    public ResponseEntity<Resource> getDefaultEventImage(
+        @PathVariable(name = "userId") Integer userId,
+        @PathVariable(name = "eventId") Long eventId,
+        @PathVariable(name = "filename") String filename) throws Exception {
+        Path path = Paths.get("uploads" + separator + "tickets" + separator + userId + separator + eventId + separator + filename);
+        Resource resource = new UrlResource(path.toUri());
+        
+        if (!resource.exists() || !resource.isReadable()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        String contentType = Files.probeContentType(path);
+        if (contentType == null) {
+            contentType = "application/octet-stream";
+        }
+        
+        // System.err.println(contentType);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
+                .body(resource);
+    }
+
     @GetMapping("/users/events/{filename}")
     public ResponseEntity<Resource> getDefaultEventImage(@PathVariable String filename) throws Exception {
         Path path = Paths.get("uploads" + separator + "users" + separator + "events" + separator + filename);

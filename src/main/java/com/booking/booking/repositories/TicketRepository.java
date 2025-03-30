@@ -19,4 +19,5 @@ public interface TicketRepository extends JpaRepository<Ticket, Integer> {
     List<Ticket> findByStatus(TicketStatus ticketStatus);
     Optional<Ticket> findByUserIdAndEventIdAndStatus(int id, Long id2, TicketStatus queued);
     Optional<Ticket> findByUserIdAndEventIdAndStatusNotIn(int id, Long id2, List<TicketStatus> of);
+    List<Ticket> findByEventIdAndStatusNot(Long eventId, TicketStatus canceled);
 }

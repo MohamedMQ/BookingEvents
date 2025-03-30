@@ -112,6 +112,7 @@ public class TicketService {
             .event(event)
             .status(TicketStatus.PENDING)
             .queueNum(-1)
+            .qrCodeUrl("")
             .build();
         newTicket = ticketRepository.save(newTicket);
         Payment newPayment = Payment

@@ -53,6 +53,9 @@ public class Ticket {
     @Column(nullable = false, name = "queue_num")
     private Integer queueNum;
 
+    @Column(name = "qr_code_url")
+    private String qrCodeUrl;
+
     @CreationTimestamp
     @Column(updatable = false, name = "created_at")
     private LocalDateTime createdAt;

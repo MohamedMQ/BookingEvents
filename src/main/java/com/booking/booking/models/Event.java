@@ -70,8 +70,8 @@ public class Event {
     @Column(name = "ticket_number")
     private Integer TicketNumber;
 
-    // @Column(nullable = false)
-    // private EventStatus status;
+    @Column(nullable = false, name = "price_stripe")
+    private String stripePrice;
 
     private String imageUrl;
 
