@@ -27,7 +27,7 @@ application:
     #     uploads:
     #         photos-output-path: ./uploads
     stripe:
-        api_key: sk_test_51QyX2k2f0IUkWUsZ8aK7XcW8gs5KkGck4zsuW3JIhmJSepukiurKONjcSRkKA53JJ6WpBoHMwEZhgVatLa7czILO00gKc6SeKf
+        api_key: sk_test_51R9Ptr4DbCH6QsC3sPhEYEfUA8YUcElES8aUU5Kw8agVIa6yCy91dRrn8Y1R3ZkY88DizQQVXXKhXMXwF1nlR7Gn00TmPFniAI
 
 springdoc:
     api-docs:

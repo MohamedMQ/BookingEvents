@@ -16,7 +16,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,20 +23,27 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.booking.booking.dto.event.PostEventDto;
 import com.booking.booking.models.Event;
+import com.booking.booking.models.Payment;
 import com.booking.booking.models.Ticket;
 import com.booking.booking.models.User;
 import com.booking.booking.repositories.EventRepository;
+import com.booking.booking.repositories.PaymentRepository;
 import com.booking.booking.repositories.TicketRepository;
+import com.booking.booking.utils.EventStatus;
 import com.booking.booking.utils.TicketStatus;
-import com.stripe.Stripe;
+import com.stripe.model.Account;
+import com.stripe.model.PaymentIntent;
 import com.stripe.model.Price;
 import com.stripe.model.Product;
+import com.stripe.model.Refund;
+import com.stripe.model.checkout.Session;
+import com.stripe.net.RequestOptions;
 import com.stripe.param.PriceCreateParams;
 import com.stripe.param.ProductCreateParams;
+import com.stripe.param.RefundCreateParams;
+import com.stripe.param.RefundCreateParams.Reason;
 
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.Valid;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -59,13 +65,16 @@ public class EventService {
 
     private final EventRepository eventRepository;
     private final TicketRepository ticketRepository;
+    private final PaymentRepository paymentRepository;
 
     EventService(
         EventRepository eventRepository,
-        TicketRepository ticketRepository
+        TicketRepository ticketRepository,
+        PaymentRepository paymentRepository
     ) {
         this.eventRepository = eventRepository;
         this.ticketRepository = ticketRepository;
+        this.paymentRepository = paymentRepository;
     }
 
     // NOT PROTECTED SERVICES
@@ -76,7 +85,8 @@ public class EventService {
         Map<String, Object> mapEvent = new HashMap<>();
         Map<String, Object> mapPagination = new HashMap<>();
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Event> events = eventRepository.findAll(pageable);
+        List<EventStatus> eventStatusList = new ArrayList<>(Arrays.asList(EventStatus.DESTROYED, EventStatus.DESTROYING));
+        Page<Event> events = eventRepository.findByEventStatusNotIn(pageable, eventStatusList);
         // List<Event> eventList = events.stream().toList();
 
         List<Event> eventList = events.stream().map(event -> {
@@ -100,8 +110,9 @@ public class EventService {
     
     public Map<String, Object> getPublicEvent(Long eventId) {
         Map<String, Object> mapEvent = new HashMap<>();
+        List<EventStatus> eventStatusList = new ArrayList<>(Arrays.asList(EventStatus.DESTROYED, EventStatus.DESTROYING));
         Event event = eventRepository
-                .findById(eventId)
+                .findByIdAndEventStatusNotIn(eventId, eventStatusList)
                 .orElseThrow(() -> new EntityNotFoundException("No event found with ID " + eventId));
         
         Set<Ticket> emptyTickets = Set.of();
@@ -147,13 +158,13 @@ public class EventService {
         // Page<Event> events = eventRepository.findAllEventsWithUserTickets(pageable, user.getId());
         // List<Event> eventList = events.stream().toList();
         
-        Page<Event> events = eventRepository.findAll(pageable);
+        List<EventStatus> eventStatusList = new ArrayList<>(Arrays.asList(EventStatus.DESTROYED, EventStatus.DESTROYING));
+        Page<Event> events = eventRepository.findByEventStatusNotIn(pageable, eventStatusList);
         List<Event> eventList = events.stream().map(event -> {
             Set<Ticket> filteredTickets = event.getTickets().stream()
                 .filter(ticket -> {
-                    System.err.println(ticket.getStatus());
-                    return ((ticket.getStatus() == TicketStatus.PENDING
-                        || ticket.getStatus() == TicketStatus.QUEUED)
+                    // System.err.println(ticket.getStatus());
+                    return (ticket.getStatus() != TicketStatus.CANCELED
                         && ticket.getUser().getId() == user.getId());
                 })
                 .collect(Collectors.toSet());
@@ -184,7 +195,9 @@ public class EventService {
 
         List<Event> eventList = events.stream().map(event -> {
             Set<Ticket> filteredTickets = event.getTickets().stream()
-                .filter(ticket -> ticket.getStatus() == TicketStatus.CONFIRMED)
+                .filter(ticket -> 
+                    ticket.getStatus() == TicketStatus.CONFIRMED
+                    || ticket.getStatus() == TicketStatus.DESTROYED)
                 .collect(Collectors.toSet());
             event.setTickets(filteredTickets);
             return event;
@@ -206,8 +219,9 @@ public class EventService {
     public Map<String, Object> getProtectedEvent(Long eventId) {
         Map<String, Object> mapEvent = new HashMap<>();
         User user = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        List<EventStatus> eventStatusList = new ArrayList<>(Arrays.asList(EventStatus.DESTROYED, EventStatus.DESTROYING));
         Event event = eventRepository
-            .findById(eventId)
+            .findByIdAndEventStatusNotIn(eventId, eventStatusList)
             .orElseThrow(() -> new EntityNotFoundException("No event found with eventId " + eventId));    
 
         Set<Ticket> filteredTickets = event.getTickets().stream()
@@ -231,6 +245,15 @@ public class EventService {
             throw new EntityNotFoundException("The file provided is not an image");
         Event event;
         try {
+            Account account = Account.retrieve(user.getAccountId());
+            List<String> currentlyDue = account.getRequirements().getCurrentlyDue();
+            String disabledReason = account.getRequirements().getDisabledReason();
+            String acceptPayments = account.getCapabilities().getTransfers();
+            if (!currentlyDue.isEmpty()
+                || disabledReason != null
+                || acceptPayments == null)
+                throw new Error();
+
             ProductCreateParams productCreateParams = ProductCreateParams.builder()
                 .setName(postEventDto.getName())
                 .setDescription(postEventDto.getDescription())
@@ -256,6 +279,7 @@ public class EventService {
                 .totalTickets(postEventDto.getTotalTickets())
                 .availableTickets(postEventDto.getTotalTickets())
                 .TicketNumber(postEventDto.getTotalTickets())
+                .eventStatus(EventStatus.CONFIRMED)
                 .user(user)
                 .imageUrl(imagePath)
                 .stripePrice(priceStripe.getId())
@@ -319,15 +343,37 @@ public class EventService {
             System.out.println("Image with path " + fullOldImagePath + " not found");
     }
 
+    // @Transactional
     public Map<String, Object> deleteProtectedEvent(Long eventId) {
-        // DELETING EVENT COMING SOON
-        throw new UnsupportedOperationException("Unimplemented method 'deleteProtectedEvent'");
+        User user = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        // Event event = eventRepository.findByIdAndUserIdAndEventStatus(eventId, user.getId(), EventStatus.CONFIRMED).orElseThrow(() -> new EntityNotFoundException("No event found in your events with this Id " + eventId));
+        Event event = eventRepository.findByIdAndUserId(eventId, user.getId()).orElseThrow(() -> new EntityNotFoundException("No event found in your events with this Id " + eventId));
+        if (event.getEventDateTime().isAfter(LocalDateTime.now())) {
+            List<Ticket> confirmedTicketList = ticketRepository.findByEventIdAndStatusIn(eventId, new ArrayList<>(Arrays.asList(TicketStatus.CONFIRMED, TicketStatus.PENDING)));
+            if (!confirmedTicketList.isEmpty())
+                throw new EntityNotFoundException("Cannot cancel your event, already bought");
+        }
+        event.setEventStatus(EventStatus.DESTROYED);
+        eventRepository.saveAndFlush(event);
+        Event eventToSend = eventRepository.findById(eventId).orElseThrow(() -> new EntityNotFoundException("No event found in your events with this Id " + eventId));
+        Set<Ticket> filteredTickets = eventToSend.getTickets().stream()
+            .filter((ticket -> ticket.getStatus() == TicketStatus.CONFIRMED
+                || ticket.getStatus() == TicketStatus.DESTROYED))
+            .collect(Collectors.toSet());
+        eventToSend.setTickets(filteredTickets);
+        Map<String, Object> mapEvent = new HashMap<>();
+        mapEvent.put("status", "success");
+        mapEvent.put("message", "Event updated successfully.");
+        mapEvent.put("data", eventToSend);
+        return mapEvent;
     }
 
     @Transactional
     public Map<String, Object> putProtectedSingleEvent(Long eventId, PostEventDto postEventDto) {
         User user = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Event event = eventRepository.findById(eventId).orElseThrow(() -> new EntityNotFoundException("No event found with this Id " + eventId));
+        // List<EventStatus> eventStatusList = new ArrayList<>(Arrays.asList(EventStatus.DESTROYED, EventStatus.DESTROYING));
+        List<EventStatus> eventStatusList = new ArrayList<>(Arrays.asList(EventStatus.DESTROYED, EventStatus.DESTROYING));
+        Event event = eventRepository.findByIdAndEventStatusNotIn(eventId, eventStatusList).orElseThrow(() -> new EntityNotFoundException("No valid event found with this Id " + eventId));
         if (event.getUser().getId() != user.getId())
             throw new EntityNotFoundException("You are not authorized to modify others events");
         List<Ticket> tickets = ticketRepository.findByEventIdAndStatusNot(eventId, TicketStatus.CANCELED);

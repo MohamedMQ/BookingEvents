@@ -42,9 +42,6 @@ public class Payment {
     @Column(nullable = false)
     private Double amount;
 
-    @Column(name = "session_id")
-    private String sessionId;
-
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private PaymentStatus status;

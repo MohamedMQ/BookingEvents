@@ -48,7 +48,7 @@ public class TicketProcessorService {
         for (Ticket ticket : tickets) {
             if (ticket.getPayment().getStatus() == PaymentStatus.PENDING) {
                 try {
-                    Session session = Session.retrieve(ticket.getPayment().getSessionId());
+                    Session session = Session.retrieve(ticket.getSessionId());
                     Session expiredSession = session.expire();
                     if ("canceled".equals(expiredSession.getStatus())) {
                         System.out.println("✅ PaymentIntent " + session + " successfully canceled.");
@@ -64,7 +64,6 @@ public class TicketProcessorService {
                             Payment newPayment = Payment
                                 .builder()
                                 .ticket(queuedTicket)
-                                .sessionId("")
                                 .status(PaymentStatus.PENDING)
                                 .amount(queuedTicket.getEvent().getPrice())
                                 .build();

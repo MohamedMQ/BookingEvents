@@ -1,11 +1,15 @@
 package com.booking.booking.services;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,6 +27,7 @@ import com.booking.booking.models.User;
 import com.booking.booking.repositories.EventRepository;
 import com.booking.booking.repositories.PaymentRepository;
 import com.booking.booking.repositories.TicketRepository;
+import com.booking.booking.utils.EventStatus;
 import com.booking.booking.utils.PaymentStatus;
 import com.booking.booking.utils.TicketStatus;
 
@@ -41,46 +46,70 @@ public class TicketService {
     private final PaymentRepository paymentRepository;
     private final TicketQueueService ticketQueueService;
 
-    // public Map<String, Object> getProtectedTickets(int page, int size) {
-    //     Map<String, Object> mapTicket = new HashMap<>();
-    //     Map<String, Object> mapPagination = new HashMap<>();
-    //     User user = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-    //     Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt"));
-    //     Page<Event> tickets = ticketRepository.findAllByUserId(pageable, user.getId());
-    //     List<Event> ticketList = tickets.stream().toList();
-    //     mapPagination.put("currentPage", tickets.getNumber());
-    //     mapPagination.put("pageSize", tickets.getSize());
-    //     mapPagination.put("totalElements", tickets.getTotalElements());
-    //     mapPagination.put("totalPages", tickets.getTotalPages());
-    //     mapPagination.put("firstPage", tickets.isFirst());
-    //     mapPagination.put("lastPage", tickets.isLast());
-    //     mapTicket.put("status", "success");
-    //     mapTicket.put("message", "Tickets retrieved successfully.");
-    //     mapTicket.put("data", ticketList);
-    //     mapTicket.put("pagination", mapPagination);
-    //     return mapTicket;
-    // }
+    public Map<String, Object> getProtectedTickets(int page, int size) {
+        Map<String, Object> mapTicket = new HashMap<>();
+        Map<String, Object> mapPagination = new HashMap<>();
+        User user = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt"));
+        Page<Event> events = ticketRepository.findAllByUserId(pageable, user.getId());
+        // List<Event> eventList = events.stream().toList();
 
-    // public Map<String, Object> getProtectedTicket(Long tickedId) {
-    //     User user = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-    //     Ticket ticket = ticketRepository.findById(tickedId).orElseThrow(() -> new EntityNotFoundException("No ticket found with this ID " + tickedId));
-    //     if (ticket.getUser().getId() != user.getId())
-    //         throw new EntityNotFoundException("You are not autorized to access other's tickets");
-    //     Map<String, Object> mapTicket = new HashMap<>();
-    //     mapTicket.put("status", "success");
-    //     mapTicket.put("message", "Ticket retrieved successfully.");
-    //     mapTicket.put("data", ticket);
-    //     return mapTicket;
-    // }
+        List<Event> eventList = events.stream().map(event -> {
+            Set<Ticket> filteredTickets = event.getTickets().stream()
+                .filter(ticket -> {
+                    System.err.println(ticket.getStatus());
+                    return ((ticket.getStatus() == TicketStatus.CONFIRMED
+                        || ticket.getStatus() == TicketStatus.DESTROYED)
+                        && ticket.getUser().getId() == user.getId());
+                })
+                .collect(Collectors.toSet());
+            event.setTickets(filteredTickets);
+            return event;
+        }).toList();
+
+        mapPagination.put("currentPage", events.getNumber());
+        mapPagination.put("pageSize", events.getSize());
+        mapPagination.put("totalElements", events.getTotalElements());
+        mapPagination.put("totalPages", events.getTotalPages());
+        mapPagination.put("firstPage", events.isFirst());
+        mapPagination.put("lastPage", events.isLast());
+        mapTicket.put("status", "success");
+        mapTicket.put("message", "Tickets retrieved successfully.");
+        mapTicket.put("data", eventList);
+        mapTicket.put("pagination", mapPagination);
+        return mapTicket;
+    }
+
+    public Map<String, Object> getProtectedTicket(Long ticketId) {
+        User user = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Ticket ticket = ticketRepository.findByIdAndUserId(ticketId, user.getId()).orElseThrow(() -> new EntityNotFoundException("No ticket found with this ID " + ticketId + " " + user.getId()));
+        Event event = eventRepository.findById(ticket.getEvent().getId()).orElseThrow(() -> new EntityNotFoundException("No event found with this ID " + ticket.getEvent().getId()));
+        
+        System.out.println(ticketId + " | " + ticket.getId());
+
+        Set<Ticket> filteredTickets = event.getTickets().stream()
+            .filter(t -> (t.getUser().getId() == user.getId()
+                && (t.getStatus() == TicketStatus.CONFIRMED
+                || t.getStatus() == TicketStatus.DESTROYED)))
+            .collect(Collectors.toSet());    
+        event.setTickets(filteredTickets);
+
+        Map<String, Object> mapTicket = new HashMap<>();
+        mapTicket.put("status", "success");
+        mapTicket.put("message", "Ticket retrieved successfully.");
+        mapTicket.put("data", event);
+        return mapTicket;
+    }
 
     @Transactional
     public Map<String, Object> postProtectedTicket(PostTicketDto postTicketDto) {
         User user = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Event event = eventRepository.findById(postTicketDto.getEventId()).orElseThrow(() -> new EntityNotFoundException("No event found with the given ID " + postTicketDto.getEventId()));
+        List<EventStatus> eventStatusList = new ArrayList<>(Arrays.asList(EventStatus.DESTROYED, EventStatus.DESTROYING));
+        Event event = eventRepository.findByIdAndEventStatusNotIn(postTicketDto.getEventId(), eventStatusList).orElseThrow(() -> new EntityNotFoundException("No valid event found with the given ID " + postTicketDto.getEventId()));
         if (user.getId() == event.getUser().getId())
             throw new EntityNotFoundException("You cannot book a ticket for your own event");
-        if (event.getEventDateTime().isEqual(LocalDateTime.now()) || event.getEventDateTime().isBefore(LocalDateTime.now()))
-            throw new EntityNotFoundException("The event already started or finished");
+        if (LocalDateTime.now().isAfter(event.getEventDateTime().minusMinutes(35)))
+            throw new EntityNotFoundException("The event close to start, already started or finished");
         // long countTicketsConfirmed = ticketRepository.countByStatus(TicketStatus.CONFIRMED);
         if (event.getAvailableTickets() == 0)
             throw new EntityNotFoundException("all the tickets has been sold");
@@ -111,18 +140,11 @@ public class TicketService {
             .user(user)
             .event(event)
             .status(TicketStatus.PENDING)
+            .sessionId(null)
             .queueNum(-1)
             .qrCodeUrl("")
             .build();
         newTicket = ticketRepository.save(newTicket);
-        Payment newPayment = Payment
-            .builder()
-            .ticket(newTicket)
-            .sessionId("")
-            .status(PaymentStatus.PENDING)
-            .amount(event.getPrice())
-            .build();
-        paymentRepository.save(newPayment);
         Map<String, Object> mapTicket = new HashMap<>();
         mapTicket.put("status", "success");
         mapTicket.put("message", "Ticket added successfully.");
@@ -133,14 +155,14 @@ public class TicketService {
     @Transactional
     public Map<String, Object> cancelProtectedTicket(Long tickedId) {
         User user = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Ticket ticket = ticketRepository.findById(tickedId).orElseThrow(() -> new EntityNotFoundException("No ticket found with this ID " + tickedId));
+        Ticket ticket = ticketRepository.findById(tickedId).orElseThrow(() -> new EntityNotFoundException("No ticket().getEventDateTime().isEqual(LocalDateTime.now()) || ticket.getEvent().getEventDateTime().isBefore(LocalDateTime.now())t found with this ID " + tickedId));
         Event event = eventRepository.findById(ticket.getEvent().getId()).orElseThrow(() -> new EntityNotFoundException("No event found with this ID " + ticket.getEvent().getId()));
         if (ticket.getUser().getId() != user.getId())
         throw new EntityNotFoundException("You are not autorized to cancel other's tickets");
         if (ticket.getStatus() != TicketStatus.PENDING)
-            throw new EntityNotFoundException("Your ticket already canceled or confirmed");
-        if (ticket.getEvent().getEventDateTime().isEqual(LocalDateTime.now()) || ticket.getEvent().getEventDateTime().isBefore(LocalDateTime.now()))
-            throw new EntityNotFoundException("The event already started or finished");
+            throw new EntityNotFoundException("Your ticket already canceled, confirmed or destroyed");
+        if (LocalDateTime.now().isAfter(event.getEventDateTime().minusMinutes(30)))
+            throw new EntityNotFoundException("The event close to start, already started or finished");
         ticket.setStatus(TicketStatus.CANCELED);
         ticketRepository.save(ticket);
         event.setTicketNumber(event.getTicketNumber() + 1);
@@ -154,20 +176,11 @@ public class TicketService {
             queuedTicket.setStatus(TicketStatus.PENDING);
             queuedTicket.setQueueNum(-1);
             ticketRepository.save(queuedTicket);
-            Payment newPayment = Payment
-                .builder()
-                .ticket(queuedTicket)
-                .sessionId("")
-                .status(PaymentStatus.PENDING)
-                .amount(queuedTicket.getEvent().getPrice())
-                .build();
-            paymentRepository.save(newPayment);
             
             // THIS SHOULD BE ASYNC TO NOT BLOCK THE RESPONSE 
             queueTicketList.forEach(tId -> {
                 // WILL BE ADDED LATER ON
             });
-
         }
 
         System.err.println(ticket);

@@ -47,6 +47,10 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String password;
     
+    @JsonIgnore
+    @Column(nullable = false)
+    private String AccountId;
+
     @CreationTimestamp
     @Column(updatable = false, name = "created_at")
     private Date createdAt;

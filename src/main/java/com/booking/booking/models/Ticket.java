@@ -56,6 +56,9 @@ public class Ticket {
     @Column(name = "qr_code_url")
     private String qrCodeUrl;
 
+    @Column(name = "session_id")
+    private String sessionId;
+
     @CreationTimestamp
     @Column(updatable = false, name = "created_at")
     private LocalDateTime createdAt;

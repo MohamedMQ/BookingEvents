@@ -2,16 +2,13 @@ package com.booking.booking.services;
 
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Service;
 
 import com.booking.booking.models.Event;
-import com.booking.booking.models.Payment;
 import com.booking.booking.models.Ticket;
 import com.booking.booking.models.User;
 import com.booking.booking.repositories.TicketRepository;
-import com.booking.booking.utils.PaymentStatus;
 import com.booking.booking.utils.TicketStatus;
 
 import lombok.AllArgsConstructor;

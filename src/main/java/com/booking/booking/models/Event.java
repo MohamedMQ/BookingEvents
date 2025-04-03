@@ -8,6 +8,7 @@ import java.util.Set;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.booking.booking.utils.EventStatus;
 import com.booking.booking.utils.MusicCategory;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -69,6 +70,10 @@ public class Event {
 
     @Column(name = "ticket_number")
     private Integer TicketNumber;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EventStatus eventStatus;
 
     @Column(nullable = false, name = "price_stripe")
     private String stripePrice;

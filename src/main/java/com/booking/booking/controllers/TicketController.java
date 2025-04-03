@@ -29,19 +29,19 @@ public class TicketController {
 
     /* PROTECTED ROUTES */
 
-    // @GetMapping("/protected/tickets")
-    // public ResponseEntity<Map<String, Object>> protectedTickets(
-    //     @RequestParam(name = "page", defaultValue = "0", required = false) int page,
-    //     @RequestParam(name = "size", defaultValue = "10", required = false) int size) {
-    //     Map<String, Object> mapTicket = ticketService.getProtectedTickets(page, size);
-    //     return ResponseEntity.status(HttpStatus.OK).body(mapTicket);
-    // }
+    @GetMapping("/protected/tickets")
+    public ResponseEntity<Map<String, Object>> protectedTickets(
+        @RequestParam(name = "page", defaultValue = "0", required = false) int page,
+        @RequestParam(name = "size", defaultValue = "10", required = false) int size) {
+        Map<String, Object> mapTicket = ticketService.getProtectedTickets(page, size);
+        return ResponseEntity.status(HttpStatus.OK).body(mapTicket);
+    }
 
-    // @GetMapping("/protected/tickets/{ticketId}")
-    // public ResponseEntity<Map<String, Object>> protectedTicket(@PathVariable Long ticketId) {
-    //     Map<String, Object> mapTicket = ticketService.getProtectedTicket(ticketId);
-    //     return ResponseEntity.status(HttpStatus.OK).body(mapTicket);
-    // }
+    @GetMapping("/protected/tickets/{ticketId}")
+    public ResponseEntity<Map<String, Object>> protectedTicket(@PathVariable Long ticketId) {
+        Map<String, Object> mapTicket = ticketService.getProtectedTicket(ticketId);
+        return ResponseEntity.status(HttpStatus.OK).body(mapTicket);
+    }
 
     @PostMapping("/protected/tickets")
     public ResponseEntity<Map<String, Object>> protectedTicket(@RequestBody PostTicketDto postTicketDto) {
@@ -50,7 +50,7 @@ public class TicketController {
     }
     
     @DeleteMapping("/protected/tickets/{ticketId}")
-    public ResponseEntity<Map<String, Object>> protectedTicket(@PathVariable Long ticketId) {
+    public ResponseEntity<Map<String, Object>> protectedTicketDelete(@PathVariable Long ticketId) {
         Map<String, Object> mapTicket = ticketService.cancelProtectedTicket(ticketId);
         return ResponseEntity.status(HttpStatus.OK).body(mapTicket);
     }
