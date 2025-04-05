@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 import org.springframework.web.multipart.MultipartFile;
 
-import com.booking.booking.utils.MusicCategory;
+import com.booking.booking.utils.EventCategory;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -35,7 +35,7 @@ public class PostEventDto {
     private String location;
 
     @NotNull(message = "Enter Category")
-    private MusicCategory category;
+    private EventCategory category;
     
     @NotNull(message = "Enter event date")
     private LocalDateTime eventDateTime;

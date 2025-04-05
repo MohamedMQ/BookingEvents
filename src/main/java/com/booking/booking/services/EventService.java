@@ -285,6 +285,7 @@ public class EventService {
                 .build();
             event = eventRepository.save(event);
         } catch (Exception e) {
+            e.printStackTrace();
             throw new EntityNotFoundException("Something Went Wrong. try again later");
         }
         Map<String, Object> mapEvent = new HashMap<>();

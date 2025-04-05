@@ -9,7 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.booking.booking.utils.EventStatus;
-import com.booking.booking.utils.MusicCategory;
+import com.booking.booking.utils.EventCategory;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.CascadeType;
@@ -52,9 +52,9 @@ public class Event {
     @Column(nullable = false)
     private String location;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private MusicCategory category;
+    @Enumerated(EnumType.STRING)
+    private EventCategory category;
 
     @Column(nullable = false, name = "event_date_time")
     private LocalDateTime eventDateTime;
@@ -71,8 +71,8 @@ public class Event {
     @Column(name = "ticket_number")
     private Integer TicketNumber;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private EventStatus eventStatus;
 
     @Column(nullable = false, name = "price_stripe")
