@@ -31,9 +31,10 @@ public class EventController {
     @GetMapping("/public/events")
     ResponseEntity<Map<String, Object>> publicEvents(
         @RequestParam(name = "page", defaultValue = "0", required = false) int page,
-        @RequestParam(name = "size", defaultValue = "10", required = false) int size) {
+        @RequestParam(name = "size", defaultValue = "10", required = false) int size,
+        @RequestParam(name = "searchTerm", defaultValue = "", required = false) String searchTerm) {
         System.out.println("INSIDE EVENTS PUBLIC");
-        Map<String, Object> mapEvent = eventService.getPublicEvents(page, size);
+        Map<String, Object> mapEvent = eventService.getPublicEvents(page, size, searchTerm);
         return ResponseEntity.status(HttpStatus.OK).body(mapEvent);
     }
 
@@ -57,8 +58,9 @@ public class EventController {
     @GetMapping("/protected/events")
     ResponseEntity<Map<String, Object>> protectedEvents(
         @RequestParam(name = "page", defaultValue = "0", required = false) int page,
-        @RequestParam(name = "size", defaultValue = "10", required = false) int size) {
-        Map<String, Object> mapEvent = eventService.getProtectedEvents(page, size);
+        @RequestParam(name = "size", defaultValue = "10", required = false) int size,
+        @RequestParam(name = "searchTerm", defaultValue = "", required = false) String searchTerm) {
+        Map<String, Object> mapEvent = eventService.getProtectedEvents(page, size, searchTerm);
         return ResponseEntity.status(HttpStatus.OK).body(mapEvent);
     }
 

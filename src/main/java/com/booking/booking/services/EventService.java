@@ -2,6 +2,7 @@ package com.booking.booking.services;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,7 +24,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.booking.booking.dto.event.PostEventDto;
 import com.booking.booking.models.Event;
-import com.booking.booking.models.Payment;
 import com.booking.booking.models.Ticket;
 import com.booking.booking.models.User;
 import com.booking.booking.repositories.EventRepository;
@@ -32,17 +32,10 @@ import com.booking.booking.repositories.TicketRepository;
 import com.booking.booking.utils.EventStatus;
 import com.booking.booking.utils.TicketStatus;
 import com.stripe.model.Account;
-import com.stripe.model.PaymentIntent;
 import com.stripe.model.Price;
 import com.stripe.model.Product;
-import com.stripe.model.Refund;
-import com.stripe.model.checkout.Session;
-import com.stripe.net.RequestOptions;
 import com.stripe.param.PriceCreateParams;
 import com.stripe.param.ProductCreateParams;
-import com.stripe.param.RefundCreateParams;
-import com.stripe.param.RefundCreateParams.Reason;
-
 import jakarta.persistence.EntityNotFoundException;
 import lombok.Getter;
 import lombok.Setter;
@@ -81,13 +74,13 @@ public class EventService {
 
     public Map<String, Object> getPublicEvents(
         int page,
-        int size) {
+        int size,
+        String searchTerm) {
         Map<String, Object> mapEvent = new HashMap<>();
         Map<String, Object> mapPagination = new HashMap<>();
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         List<EventStatus> eventStatusList = new ArrayList<>(Arrays.asList(EventStatus.DESTROYED, EventStatus.DESTROYING));
-        Page<Event> events = eventRepository.findByEventStatusNotIn(pageable, eventStatusList);
-        // List<Event> eventList = events.stream().toList();
+        Page<Event> events = eventRepository.findActiveEvents(pageable, searchTerm, eventStatusList);
 
         List<Event> eventList = events.stream().map(event -> {
             Set<Ticket> emptyTickets = Set.of();
@@ -131,8 +124,16 @@ public class EventService {
         Map<String, Object> mapEvent = new HashMap<>();
         Map<String, Object> mapPagination = new HashMap<>();
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Event> events = eventRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCaseOrLocationContainingIgnoreCase(pageable, searchTerm, searchTerm, searchTerm);
-        List<Event> eventList = events.stream().toList();
+        List<EventStatus> eventStatusList = Arrays.asList(EventStatus.DESTROYED, EventStatus.DESTROYING);
+        Page<Event> events = eventRepository.findActiveEvents(pageable, searchTerm, eventStatusList);
+        // List<Event> eventList = events.stream().toList();
+
+        List<Event> eventList = events.stream().map(event -> {
+            Set<Ticket> emptyTickets = Set.of();
+            event.setTickets(emptyTickets);
+            return event;
+        }).toList();
+
         mapPagination.put("currentPage", events.getNumber());
         mapPagination.put("pageSize", events.getSize());
         mapPagination.put("totalElements", events.getTotalElements());
@@ -150,20 +151,18 @@ public class EventService {
 
     public Map<String, Object> getProtectedEvents(
         int page,
-        int size) {
+        int size,
+        String searchTerm) {
         Map<String, Object> mapEvent = new HashMap<>();
         Map<String, Object> mapPagination = new HashMap<>();
         User user = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        // Page<Event> events = eventRepository.findAllEventsWithUserTickets(pageable, user.getId());
-        // List<Event> eventList = events.stream().toList();
         
         List<EventStatus> eventStatusList = new ArrayList<>(Arrays.asList(EventStatus.DESTROYED, EventStatus.DESTROYING));
-        Page<Event> events = eventRepository.findByEventStatusNotIn(pageable, eventStatusList);
+        Page<Event> events = eventRepository.findActiveEvents(pageable, searchTerm, eventStatusList);
         List<Event> eventList = events.stream().map(event -> {
             Set<Ticket> filteredTickets = event.getTickets().stream()
                 .filter(ticket -> {
-                    // System.err.println(ticket.getStatus());
                     return (ticket.getStatus() != TicketStatus.CANCELED
                         && ticket.getUser().getId() == user.getId());
                 })
@@ -378,7 +377,7 @@ public class EventService {
             throw new EntityNotFoundException("You are not authorized to modify others events");
         List<Ticket> tickets = ticketRepository.findByEventIdAndStatusNot(eventId, TicketStatus.CANCELED);
         if (!tickets.isEmpty()) {
-            if (!postEventDto.getEventDateTime().equals(event.getEventDateTime()))
+            if (!postEventDto.getEventDateTime().toLocalDate().equals(event.getEventDateTime().toLocalDate()))
                 throw new EntityNotFoundException("EventDateTime value should not be changed " + postEventDto.getEventDateTime());
             if (!postEventDto.getLocation().equals(event.getLocation()))
                 throw new EntityNotFoundException("Location value should not be changed " + postEventDto.getLocation());

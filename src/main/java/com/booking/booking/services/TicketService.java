@@ -1,6 +1,8 @@
 package com.booking.booking.services;
 
+import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -15,6 +17,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,11 +36,24 @@ import com.booking.booking.repositories.TicketRepository;
 import com.booking.booking.utils.EventStatus;
 import com.booking.booking.utils.PaymentStatus;
 import com.booking.booking.utils.TicketStatus;
+import com.lowagie.text.Document;
+import com.lowagie.text.Element;
+import com.lowagie.text.Font;
+import com.lowagie.text.Image;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.Phrase;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfPCell;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.awt.Color;
+import java.awt.color.*;
 
 @Getter
 @Setter
@@ -189,5 +208,99 @@ public class TicketService {
         mapTicket.put("message", "Ticket canceled successfully.");
         mapTicket.put("data", ticket);
         return mapTicket;
+    }
+
+    public ResponseEntity<byte[]> getPdfFile(Long ticketId) {
+        User user = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Ticket ticket = ticketRepository.findById(ticketId).orElseThrow(() -> new EntityNotFoundException("No ticket().getEventDateTime().isEqual(LocalDateTime.now()) || ticket.getEvent().getEventDateTime().isBefore(LocalDateTime.now())t found with this ID " + ticketId));
+        Event event = eventRepository.findById(ticket.getEvent().getId()).orElseThrow(() -> new EntityNotFoundException("No event found with this ID " + ticket.getEvent().getId()));
+        if (ticket.getUser().getId() != user.getId())
+            throw new EntityNotFoundException("You are not autorized to cancel other's tickets");
+        if (ticket.getStatus() != TicketStatus.CONFIRMED)
+            throw new EntityNotFoundException("Your ticket is not confirmed yet");
+        if (LocalDateTime.now().isAfter(event.getEventDateTime().plusMinutes(15)))
+            throw new EntityNotFoundException("The event finished or close to finish");
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            Document document = new Document();
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            document.add(new Paragraph());
+    
+            Image image = Image.getInstance('.' + event.getImageUrl());
+            float documentWidth = document.getPageSize().getWidth() - document.leftMargin() - document.rightMargin();
+            image.scaleToFit(documentWidth, document.getPageSize().getHeight());
+            image.setAlignment(Image.ALIGN_CENTER);
+            document.add(image);
+
+            document.add(new Paragraph());
+
+            PdfPTable headerTable = new PdfPTable(1);
+            headerTable.setWidthPercentage(100);
+            Font headerFont = new Font(Font.HELVETICA, 18, Font.BOLD, Color.WHITE);
+            PdfPCell headerCell = new PdfPCell(new Phrase("Tickey Summary", headerFont));
+            headerCell.setBackgroundColor(Color.RED);
+            headerCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            headerCell.setPadding(12f);
+            headerCell.setBorder(Rectangle.NO_BORDER);
+            headerTable.addCell(headerCell);
+            headerTable.setSpacingBefore(20f);
+            document.add(headerTable);
+
+            Image qrImage = Image.getInstance('.' + ticket.getQrCodeUrl());
+            qrImage.setAlignment(Image.ALIGN_CENTER);
+            qrImage.scaleToFit(150, 150);
+            document.add(qrImage);
+
+            Paragraph eventName = new Paragraph("Event: " + event.getName());
+            eventName.setAlignment(Paragraph.ALIGN_CENTER);
+            document.add(eventName);
+            Paragraph eventDate = new Paragraph("Date: " + event.getEventDateTime().format(DateTimeFormatter.ofPattern("dd-MM-yyyy hh:mm:ss")));
+            eventDate.setAlignment(Paragraph.ALIGN_CENTER);
+            document.add(eventDate);
+            Paragraph eventLocation = new Paragraph("Location: " + event.getLocation());
+            eventLocation.setAlignment(Paragraph.ALIGN_CENTER);
+            document.add(eventLocation);
+            Paragraph ticketHolder = new Paragraph("Ticket Holder: " + ticket.getUser().getName());
+            ticketHolder.setAlignment(Paragraph.ALIGN_CENTER);
+            document.add(ticketHolder);
+            Paragraph eventPrice = new Paragraph("Price: $" + event.getPrice());
+            eventPrice.setAlignment(Paragraph.ALIGN_CENTER);
+            document.add(eventPrice);
+            Paragraph ticketPurchasedDate = new Paragraph("Purchased Date: " + ticket.getUpdatedAt().format(DateTimeFormatter.ofPattern("dd-MM-yyyy hh:mm:ss")));
+            ticketPurchasedDate.setAlignment(Paragraph.ALIGN_CENTER);
+            document.add(ticketPurchasedDate);
+            document.add(new Paragraph());
+
+            PdfPTable headerTable2 = new PdfPTable(1);
+            headerTable2.setWidthPercentage(100);
+            Font headerFont2 = new Font(Font.HELVETICA, 18, Font.BOLD, Color.WHITE);
+            PdfPCell headerCell2 = new PdfPCell(new Phrase("Important Informations", headerFont2));
+            headerCell2.setBackgroundColor(Color.RED);
+            headerCell2.setHorizontalAlignment(Element.ALIGN_CENTER);
+            headerCell2.setPadding(12f);
+            headerCell2.setBorder(Rectangle.NO_BORDER);
+            headerTable2.addCell(headerCell2);
+            headerTable2.setSpacingBefore(20f);
+            document.add(headerTable2);
+
+            Paragraph note1 = new Paragraph("• Please arrive at least 30 minutes before the event");
+            Paragraph note2 = new Paragraph("• Have your ticket QR code ready for scanning");
+            Paragraph note3 = new Paragraph("• This ticket is non-transferable");
+            note1.setSpacingBefore(20f);
+            document.add(note1);
+            document.add(note2);
+            document.add(note3);
+
+            document.close();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", "event_ticket.pdf");
+            return new ResponseEntity<>(out.toByteArray(), headers, HttpStatus.OK);
+        } catch (Exception e) {
+            throw new EntityNotFoundException("Something went wrong!! try again later");
+        }
     }
 }

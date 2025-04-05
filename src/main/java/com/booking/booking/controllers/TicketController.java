@@ -5,9 +5,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.booking.booking.dto.ticket.PostTicketDto;
 import com.booking.booking.services.TicketService;
+import com.lowagie.text.Document;
+import com.lowagie.text.Font;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfTable;
+import com.lowagie.text.pdf.PdfWriter;
 
 import lombok.AllArgsConstructor;
 
+import java.io.ByteArrayOutputStream;
+import java.net.http.HttpHeaders;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
@@ -54,4 +62,10 @@ public class TicketController {
         Map<String, Object> mapTicket = ticketService.cancelProtectedTicket(ticketId);
         return ResponseEntity.status(HttpStatus.OK).body(mapTicket);
     }
+
+    @GetMapping("/protected/tickets/{ticketId}/download/pdf")
+    public ResponseEntity<byte[]> getMethodName(@PathVariable Long ticketId) {
+        return ticketService.getPdfFile(ticketId);
+    }
+    
 }

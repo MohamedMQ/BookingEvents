@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import com.booking.booking.dto.user.AccountStatusResponseDto;
 import com.booking.booking.dto.user.LoginUserDto;
+import com.booking.booking.dto.user.LoginUserResponseDto;
 import com.booking.booking.dto.user.RegisterUserDto;
 import com.booking.booking.models.User;
 import com.booking.booking.repositories.UserRepository;
@@ -27,6 +30,9 @@ import com.stripe.param.AccountLinkCreateParams;
 import com.stripe.param.LoginLinkCreateOnAccountParams;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -196,5 +202,20 @@ public class AuthService {
             throw new EntityNotFoundException("Something went wrong when trying creating dashboard link");
         }
         return res;
+    }
+
+    public Map<String, Object> getProtectedLogout(HttpServletResponse responseHeader) {
+        ResponseCookie cookie = ResponseCookie
+            .from("accessToken", "")
+            .httpOnly(true)
+            .secure(true)
+            .path("/")
+            .maxAge(0)
+            .build();
+        responseHeader.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "success");
+        response.put("message", "Logout successfully");
+        return response;
     }
 }

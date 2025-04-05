@@ -57,17 +57,17 @@ public class AuthController {
 
     @PostMapping("/public/auth/login")
     public ResponseEntity<Map<String, Object>> publicLogin(@Valid @RequestBody LoginUserDto loginUserDto, 
-                                                HttpServletRequest request ,
-                                                HttpServletResponse responseHeader) {
+        HttpServletRequest request,
+        HttpServletResponse responseHeader) {
         User authenticatedUser = authenticationService.postPublicLogin(loginUserDto);
         String jwtToken = jwtService.generateToken(authenticatedUser);
         ResponseCookie cookie = ResponseCookie
-                                .from("accessToken", jwtToken)
-                                .httpOnly(true)
-                                .secure(true)
-                                .path("/")
-                                .maxAge(jwtService.getExpirationTime())
-                                .build();
+            .from("accessToken", jwtToken)
+            .httpOnly(true)
+            .secure(true)
+            .path("/")
+            .maxAge(jwtService.getExpirationTime())
+            .build();
         responseHeader.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         Map<String, Object> response = new HashMap<>();
         response.put("status", "success");
@@ -103,6 +103,12 @@ public class AuthController {
     @GetMapping("/protected/dashboard/link")
     public ResponseEntity<Map<String, Object>> dashboardLink() {
         Map<String, Object> res = authenticationService.getDashboardLink();
+        return ResponseEntity.status(HttpStatus.OK).body(res);
+    }
+
+    @GetMapping("/protected/auth/logout")
+    public ResponseEntity<Map<String, Object>> protectedLogout(HttpServletResponse responseHeader) {
+        Map<String, Object> res = authenticationService.getProtectedLogout(responseHeader);
         return ResponseEntity.status(HttpStatus.OK).body(res);
     }
 
