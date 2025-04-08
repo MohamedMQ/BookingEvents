@@ -53,3 +53,6 @@ Welcome to the **Event Ticketing System** project, a comprehensive event managem
 
 - **Extended Browser Compatibility:**  
   We ensure the game runs smoothly across all major browsers, providing consistent performance and user experience.
+
+## FRONTEND PART
+  [Visit the frontend part](https://github.com/MohamedMQ/BookingEvents-ui)
